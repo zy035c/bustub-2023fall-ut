@@ -6,7 +6,6 @@ namespace bustub {
 
 template <class T>
 auto Trie::Get(std::string_view key) const -> const T * {
-
   // You should walk through the trie to find the node corresponding to the key. If the node doesn't exist, return
   // nullptr. After you find the node, you should use `dynamic_cast` to cast it to `const TrieNodeWithValue<T> *`. If
   // dynamic_cast returns `nullptr`, it means the type of the value is mismatched, and you should return nullptr.
@@ -14,17 +13,23 @@ auto Trie::Get(std::string_view key) const -> const T * {
   auto cur = root_; /* Don't need to clone. Simply increment shared ptr counter. */
 
   for (char c : key) {
-    if (cur == nullptr) { return nullptr;}
+    if (cur == nullptr) {
+      return nullptr;
+    }
 
     auto it = cur->children_.find(c);
-    if (it == cur->children_.end()) { return nullptr; } 
+    if (it == cur->children_.end()) {
+      return nullptr;
+    }
 
     cur = it->second;
   }
 
   auto node_with_value = dynamic_cast<const TrieNodeWithValue<T> *>(cur.get());
 
-  if (node_with_value == nullptr || !node_with_value->is_value_node_) { return nullptr; }
+  if (node_with_value == nullptr || !node_with_value->is_value_node_) {
+    return nullptr;
+  }
 
   return node_with_value->value_.get(); /* Get naked pointer T star */
 }
@@ -35,57 +40,57 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
 
   // You should walk through the trie and create new nodes if necessary. If the node corresponding to the key already
   // exists, you should create a new `TrieNodeWithValue`.
-  if (key.length() == 0) { return *this; }
+  if (key.length() == 0) {
+    return *this;
+  }
 
-    std::shared_ptr<TrieNode> new_root;
-    if (root_ == nullptr) {
-      new_root = std::make_shared<TrieNode>();
-      // std::cout << "Creating a new root" << std::endl;
+  std::shared_ptr<TrieNode> new_root;
+  if (root_ == nullptr) {
+    new_root = std::make_shared<TrieNode>();
+    // std::cout << "Creating a new root" << std::endl;
+  } else {
+    new_root = std::shared_ptr<TrieNode>(root_->Clone());
+  }
+
+  std::shared_ptr<TrieNode> cur = new_root;
+
+  for (std::size_t i = 0; i < key.length() - 1; ++i) {
+    char c = key[i];
+
+    auto it = cur->children_.find(c);
+
+    std::shared_ptr<TrieNode> next;
+
+    if (it == cur->children_.end()) { /* key not exist in children */
+      next = std::make_shared<TrieNode>();
+      // std::cout << "Can't' find node for char " << c << std::endl;
     } else {
-      new_root = std::shared_ptr<TrieNode>(root_->Clone());
-    }
-        
-    std::shared_ptr<TrieNode> cur = new_root;
-
-    for (std::size_t i = 0; i < key.length() - 1; ++i) {
-
-      char c = key[i];
-
-      auto it = cur->children_.find(c);
-
-      std::shared_ptr<TrieNode> next;
-
-      if (it == cur->children_.end()) { /* key not exist in children */
-        next = std::make_shared<TrieNode>();
-        // std::cout << "Can't' find node for char " << c << std::endl;
-      } else {
-        // std::cout << "Found node for char " << c << std::endl;
-        next = std::shared_ptr<TrieNode>(it->second->Clone());
-      }
-
-      cur->children_[c] = next;
-      cur = next;
+      // std::cout << "Found node for char " << c << std::endl;
+      next = std::shared_ptr<TrieNode>(it->second->Clone());
     }
 
-    std::shared_ptr<TrieNode> last;
-    
-    char last_key = key[key.length() - 1];
-    auto it = cur->children_.find(last_key);
+    cur->children_[c] = next;
+    cur = next;
+  }
 
-    if (it == cur->children_.end()) {
-      /* std::shared_ptr<A> a = std::make_shared<B>(b); */
-      /* Call the constructor of TrieNodeWithValue... */
-      last = std::make_shared<TrieNodeWithValue<T>> (std::make_shared<T>(std::move(value)));
-    } else {
-      last = std::make_shared<TrieNodeWithValue<T>> (
-          it->second->children_,
-          std::make_shared<T>(std::move(value)) /* kind of depends on T's constructor? */
-      );
-    }
+  std::shared_ptr<TrieNode> last;
 
-    cur->children_[last_key] = last;
+  char last_key = key[key.length() - 1];
+  auto it = cur->children_.find(last_key);
 
-    return Trie(new_root);
+  if (it == cur->children_.end()) {
+    /* std::shared_ptr<A> a = std::make_shared<B>(b); */
+    /* Call the constructor of TrieNodeWithValue... */
+    last = std::make_shared<TrieNodeWithValue<T>>(std::make_shared<T>(std::move(value)));
+  } else {
+    last = std::make_shared<TrieNodeWithValue<T>>(
+        it->second->children_, std::make_shared<T>(std::move(value)) /* kind of depends on T's constructor? */
+    );
+  }
+
+  cur->children_[last_key] = last;
+
+  return Trie(new_root);
 }
 
 auto Trie::Remove(std::string_view key) const -> Trie {
@@ -94,7 +99,7 @@ auto Trie::Remove(std::string_view key) const -> Trie {
   std::vector<std::shared_ptr<TrieNode>> path;
 
   if (root_ == nullptr) { /* Try to remove from empty trie, return nothing */
-      return *this;
+    return *this;
   }
 
   auto new_root = std::shared_ptr<TrieNode>(root_->Clone());
@@ -102,10 +107,10 @@ auto Trie::Remove(std::string_view key) const -> Trie {
 
   for (char c : key) {
     auto it = cur->children_.find(c);
-    
+
     // If the key doesn't exist, return the original trie.
     if (it == cur->children_.end()) {
-        return *this;
+      return *this;
     }
 
     std::shared_ptr<TrieNode> next = std::shared_ptr<TrieNode>(it->second->Clone());
@@ -114,7 +119,9 @@ auto Trie::Remove(std::string_view key) const -> Trie {
     cur = next;
   }
 
-  if (!cur->is_value_node_) { return *this; }
+  if (!cur->is_value_node_) {
+    return *this;
+  }
 
   int i = key[key.length() - 1];
   /* Now cur is still a TrieNode ptr. Instantiate a TrieNode. */
@@ -124,17 +131,17 @@ auto Trie::Remove(std::string_view key) const -> Trie {
   cur = node_wo_value;
 
   while (!path.empty()) {
-    auto prev = path.back(); 
+    auto prev = path.back();
     path.pop_back();
     if (!cur->children_.empty()) {
-        break;
+      break;
     }
     /* if empty map, delete the node (by disconnecting from previous node) */
     prev->children_[i] = nullptr;
     cur = prev;
   }
 
-  return Trie(new_root); 
+  return Trie(new_root);
 }
 
 // Below are explicit instantiation of template functions.
