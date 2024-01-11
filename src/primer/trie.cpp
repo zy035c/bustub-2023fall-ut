@@ -40,16 +40,18 @@ auto Trie::Put(std::string_view key, T value) const -> Trie {
 
   // You should walk through the trie and create new nodes if necessary. If the node corresponding to the key already
   // exists, you should create a new `TrieNodeWithValue`.
-  if (key.length() == 0) {
-    return *this;
-  }
-
   std::shared_ptr<TrieNode> new_root;
   if (root_ == nullptr) {
     new_root = std::make_shared<TrieNode>();
     // std::cout << "Creating a new root" << std::endl;
   } else {
-    new_root = std::shared_ptr<TrieNode>(root_->Clone());
+    new_root = std::shared_ptr<TrieNode>(std::move(root_->Clone()));
+  }
+
+  if (key.empty()) {
+    std::shared_ptr<TrieNode> root_with_value =
+        std::make_shared<TrieNodeWithValue<T>>(new_root->children_, std::make_shared<T>(std::move(value)));
+    return Trie(root_with_value);
   }
 
   std::shared_ptr<TrieNode> cur = new_root;
@@ -98,12 +100,13 @@ auto Trie::Remove(std::string_view key) const -> Trie {
   // you should convert it to `TrieNode`. If a node doesn't have children any more, you should remove it.
   std::vector<std::shared_ptr<TrieNode>> path;
 
-  if (root_ == nullptr) { /* Try to remove from empty trie, return nothing */
+  if (this->root_ == nullptr) { /* Try to remove from empty trie, return nothing */
     return *this;
   }
 
-  auto new_root = std::shared_ptr<TrieNode>(root_->Clone());
+  auto new_root = std::shared_ptr<TrieNode>(std::move(root_->Clone()));
   auto cur = new_root;
+  path.push_back(cur);
 
   for (char c : key) {
     auto it = cur->children_.find(c);
@@ -113,9 +116,9 @@ auto Trie::Remove(std::string_view key) const -> Trie {
       return *this;
     }
 
-    std::shared_ptr<TrieNode> next = std::shared_ptr<TrieNode>(it->second->Clone());
+    auto next = std::shared_ptr<TrieNode>(std::move(it->second->Clone()));
     path.push_back(next);
-    cur->children_[c] = next;
+    cur->children_[c] = next;  // connect new_root to cloned new nodes
     cur = next;
   }
 
@@ -123,22 +126,29 @@ auto Trie::Remove(std::string_view key) const -> Trie {
     return *this;
   }
 
-  int i = key[key.length() - 1];
+  if (key.size() == 0) {
+    auto new_root = std::make_shared<TrieNode>(cur->children_);  // only delete the value at root
+    return Trie(new_root);
+  }
+
+  char last_char = key[key.length() - 1];
   /* Now cur is still a TrieNode ptr. Instantiate a TrieNode. */
   std::shared_ptr<TrieNode> node_wo_value = std::make_shared<TrieNode>(cur->children_);
   path.pop_back();
-  path.back()->children_[i] = node_wo_value;
-  cur = node_wo_value;
+  path.back()->children_[last_char] = node_wo_value;
 
-  while (!path.empty()) {
-    auto prev = path.back();
+  auto runner = node_wo_value;
+
+  auto it = key.rbegin();
+  while (!path.empty() && it != key.rend() && !runner->is_value_node_ && runner->children_.empty()) {
+    path.back()->children_.erase(*it);
+    runner = path.back();
     path.pop_back();
-    if (!cur->children_.empty()) {
-      break;
-    }
-    /* if empty map, delete the node (by disconnecting from previous node) */
-    prev->children_[i] = nullptr;
-    cur = prev;
+    ++it;
+  }
+
+  if (new_root->children_.empty()) {
+    return Trie(nullptr);
   }
 
   return Trie(new_root);

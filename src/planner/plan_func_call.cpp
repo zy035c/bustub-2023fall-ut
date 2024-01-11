@@ -42,17 +42,17 @@ auto Planner::GetFuncCallFromFactory(const std::string &func_name, std::vector<A
   // 3. return a `StringExpression` std::shared_ptr.
   if (func_name == "lower") {
     if (args.size() != 1) {
-      throw Exception("lower() takes exactly 1 argument");
+      throw bustub::ExecutionException("lower() takes exactly 1 argument");
     }
     return std::make_shared<StringExpression>(args[0], StringExpressionType::Lower);
   }
   if (func_name == "upper") {
     if (args.size() != 1) {
-      throw Exception("upper() takes exactly 1 argument");
+      throw bustub::ExecutionException("upper() takes exactly 1 argument");
     }
     return std::make_shared<StringExpression>(args[0], StringExpressionType::Upper);
   }
-  throw Exception(fmt::format("func call {} not supported in planner yet", func_name));
+  throw bustub::ExecutionException(fmt::format("func call {} not supported in planner yet", func_name));
 }
 
 }  // namespace bustub

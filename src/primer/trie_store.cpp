@@ -31,7 +31,10 @@ void TrieStore::Put(std::string_view key, T value) {
   std::unique_lock<std::shared_mutex> lock(this->write_lock_);
   std::unique_lock<std::shared_mutex> root_lock(this->root_lock_);  // put lock to both root and write_lock
   auto root = this->root_;
-  root.Put<T>(key, std::forward<T>(value));  // why forward?? does it work?
+  root_lock.unlock();
+
+  root = root.Put<T>(key, std::move(value));  // why move?? does it work?
+  root_lock.lock();
   this->root_ = root;
 }
 
@@ -41,7 +44,10 @@ void TrieStore::Remove(std::string_view key) {
   std::unique_lock<std::shared_mutex> lock(this->write_lock_);
   std::unique_lock<std::shared_mutex> root_lock(this->root_lock_);  // put lock to both root and write_lock
   auto root = this->root_;
-  root.Remove(key);
+  root_lock.unlock();
+
+  root = root.Remove(key);
+  root_lock.lock();
   this->root_ = root;
 }
 
