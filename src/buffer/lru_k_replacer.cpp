@@ -19,6 +19,7 @@ namespace bustub {
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) {}
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
+    std::unique_lock<std::mutex> lock(this->latch_);
     if (this->curr_size_ <= 0) {
         return false;
     }
@@ -53,16 +54,12 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
     if (static_cast<size_t>(frame_id) > this->replacer_size_) {
         throw bustub::Exception("frame id is invalid (ie. larger than replacer_size_");
     }
+    std::unique_lock<std::mutex> lock(this->latch_);
     LRUKNode cur_node;
     auto it = this->node_store_.find(frame_id);
     if (it != this->node_store_.end()) {
         cur_node = this->node_store_[frame_id];
     } else {
-        if (this->Size() == this->replacer_size_) {
-            // ? evict
-            int val;
-            this->Evict(&val);
-        }
         cur_node = LRUKNode(this->k_, frame_id);
     }
     cur_node.AddHistory(this->current_timestamp_);
@@ -100,6 +97,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
 }
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
+    std::unique_lock<std::mutex> lock(this->latch_);
     auto it = this->node_store_.find(frame_id);
     if (it == this->node_store_.end()) {
         throw bustub::Exception("frame id is invalid (it has not been not recorded in the replacer");
@@ -121,6 +119,7 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
+    std::unique_lock<std::mutex> lock(this->latch_);
     if (static_cast<size_t>(frame_id) > this->replacer_size_) {
         throw bustub::Exception("frame id is invalid (ie. larger than replacer_size_");
     }
@@ -142,7 +141,10 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
     --this->curr_size_;
 }
 
-auto LRUKReplacer::Size() -> size_t { return this->curr_size_; }
+auto LRUKReplacer::Size() -> size_t { 
+    std::unique_lock<std::mutex> lock(this->latch_);
+    return this->curr_size_; 
+}
 
 //
 //
