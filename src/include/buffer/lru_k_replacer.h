@@ -37,19 +37,17 @@ class LRUKNode {
   bool is_k_inf_{true};
 
 public:
-  void LRUKNode::AddHistory(size_t history);
-  bool LRUKNode::GetEvictable();
-  void LRUKNode::SetEvictable(bool ev);
-  void LRUKNode::SetIsKInf(bool is_k_inf);
-  bool LRUKNode::GetIsKInf();
+  void AddHistory(size_t history);
+  bool GetEvictable();
+  void SetEvictable(bool ev);
+  void SetIsKInf(bool is_k_inf);
+  bool GetIsKInf();
+  auto GetK() -> size_t;
  
 
   LRUKNode();
   explicit LRUKNode(size_t k, frame_id_t fid);
   ~LRUKNode() = default;
-
-  auto LRUKNode::GetK() -> size_t;
-
 };
 
 /**

@@ -19,27 +19,28 @@ namespace bustub {
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) {}
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
-    if (this->node_k_dist.empty()) {
-        if (this->node_inf_k_dist.empty()) {
-            return false;
-        }
+    if (this->curr_size_ <= 0) {
+        return false;
+    }
 
+    if (!this->node_inf_k_dist.empty()) {
         for (auto it = this->node_inf_k_dist.begin(); it != this->node_inf_k_dist.end(); ++it) {
             if (this->node_store_[*it].GetEvictable()) {
                 *frame_id = *it;
                 this->node_store_.erase(*frame_id);
                 this->node_inf_k_dist.remove(*frame_id);
+                --this->curr_size_;
                 return true;
             }
         }
 
     } else {
-
         for (auto it = this->node_k_dist.begin(); it != this->node_k_dist.end(); ++it) {
             if (this->node_store_[*it].GetEvictable()) {
                 *frame_id = *it;
                 this->node_store_.erase(*frame_id);
                 this->node_k_dist.remove(*frame_id);
+                --this->curr_size_;
                 return true;
             }
         }
@@ -49,7 +50,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 }
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {
-    if (frame_id > this->replacer_size_) {
+    if (static_cast<size_t>(frame_id) > this->replacer_size_) {
         throw bustub::Exception("frame id is invalid (ie. larger than replacer_size_");
     }
     LRUKNode cur_node;
@@ -83,13 +84,15 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
     } else {
         if (cur_node.GetIsKInf()) {
             this->node_inf_k_dist.remove(frame_id);
+            cur_node.SetIsKInf(false);
+            this->node_k_dist.push_back(frame_id);
+        } else {
+            this->node_k_dist.splice(
+                this->node_k_dist.end(),
+                this->node_k_dist,
+                std::find(this->node_k_dist.begin(), this->node_k_dist.end(), frame_id)
+            );
         }
-        cur_node.SetIsKInf(false);
-        this->node_k_dist.splice(
-            this->node_k_dist.end(),
-            this->node_k_dist,
-            std::find(this->node_k_dist.begin(), this->node_k_dist.end(), frame_id)
-        );
     }
 
     ++this->current_timestamp_;
@@ -109,16 +112,16 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
     }
 
     if (set_evictable) {
-        ++this->replacer_size_;
+        ++this->curr_size_;
     } else {
-        --this->replacer_size_;
+        --this->curr_size_;
     }
     cur_node.SetEvictable(set_evictable);
     this->node_store_[frame_id] = cur_node;
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
-    if (frame_id > this->replacer_size_) {
+    if (static_cast<size_t>(frame_id) > this->replacer_size_) {
         throw bustub::Exception("frame id is invalid (ie. larger than replacer_size_");
     }
     auto it = this->node_store_.find(frame_id);
@@ -136,14 +139,16 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
     } else {
         this->node_k_dist.remove(frame_id);
     }
+    --this->curr_size_;
 }
 
-auto LRUKReplacer::Size() -> size_t { return this->node_store_.size(); }
+auto LRUKReplacer::Size() -> size_t { return this->curr_size_; }
 
 //
 //
 
 LRUKNode::LRUKNode(size_t k, frame_id_t frame_id) : k_(k), fid_(frame_id) {}
+LRUKNode::LRUKNode() {}
 
 void LRUKNode::AddHistory(size_t history) {
     this->history_.push_back(history);
