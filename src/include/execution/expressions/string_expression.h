@@ -38,15 +38,27 @@ enum class StringExpressionType { Lower, Upper };
 class StringExpression : public AbstractExpression {
  public:
   StringExpression(AbstractExpressionRef arg, StringExpressionType expr_type)
-      : AbstractExpression({std::move(arg)}, TypeId::VARCHAR), expr_type_{expr_type} {
-    if (GetChildAt(0)->GetReturnType() != TypeId::VARCHAR) {
-      throw bustub::NotImplementedException("expect the first arg to be varchar");
+      : AbstractExpression({std::move(arg)}, Column{"<val>", TypeId::VARCHAR, 256 /* hardcode max length */}),
+        expr_type_{expr_type} {
+    if (GetChildAt(0)->GetReturnType().GetType() != TypeId::VARCHAR) {
+      BUSTUB_ENSURE(GetChildAt(0)->GetReturnType().GetType() == TypeId::VARCHAR, "unexpected arg");
     }
   }
 
   auto Compute(const std::string &val) const -> std::string {
+    std::string res = val;
     // TODO(student): implement upper / lower.
-    return {};
+    switch (this->expr_type_) {
+      case StringExpressionType::Lower:
+        std::transform(res.begin(), res.end(), res.begin(), ::tolower);
+        break;
+      case StringExpressionType::Upper:
+        std::transform(res.begin(), res.end(), res.begin(), ::toupper);
+        break;
+      default:
+        break;
+    }
+    return res;
   }
 
   auto Evaluate(const Tuple *tuple, const Schema &schema) const -> Value override {
