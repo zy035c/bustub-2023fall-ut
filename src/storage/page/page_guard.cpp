@@ -15,6 +15,12 @@ auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard
 
 BasicPageGuard::~BasicPageGuard(){};  // NOLINT
 
+auto BasicPageGuard::UpgradeRead() -> ReadPageGuard { return {bpm_, page_}; }
+
+auto BasicPageGuard::UpgradeWrite() -> WritePageGuard { return {bpm_, page_}; }
+
+ReadPageGuard::ReadPageGuard(BufferPoolManager *bpm, Page *page) {}
+
 ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept = default;
 
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & { return *this; }
@@ -22,6 +28,8 @@ auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & 
 void ReadPageGuard::Drop() {}
 
 ReadPageGuard::~ReadPageGuard() {}  // NOLINT
+
+WritePageGuard::WritePageGuard(BufferPoolManager *bpm, Page *page) {}
 
 WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept = default;
 
