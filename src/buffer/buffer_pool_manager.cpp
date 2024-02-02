@@ -22,9 +22,9 @@ BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager *disk_manager
                                      LogManager *log_manager)
     : pool_size_(pool_size), disk_scheduler_(std::make_unique<DiskScheduler>(disk_manager)), log_manager_(log_manager) {
   // TODO(students): remove this line after you have implemented the buffer pool manager
-  throw NotImplementedException(
-      "BufferPoolManager is not implemented yet. If you have finished implementing BPM, please remove the throw "
-      "exception line in `buffer_pool_manager.cpp`.");
+  // throw NotImplementedException(
+  //     "BufferPoolManager is not implemented yet. If you have finished implementing BPM, please remove the throw "
+  //     "exception line in `buffer_pool_manager.cpp`.");
 
   // we allocate a consecutive memory space for the buffer pool
   pages_ = new Page[pool_size_];
@@ -40,16 +40,16 @@ BufferPoolManager::~BufferPoolManager() { delete[] pages_; }
 
 auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
   std::unique_lock<std::mutex> lock(this->latch_);
-  frame_id_t *fid;
+  frame_id_t fid;
 
   // You should pick the replacement frame from either the free list or the replacer
   if (this->free_list_.empty()) {
     // nullptr if all frames are currently in use and not evictable (in another word, pinned)
-    if (!this->replacer_->Evict(fid)) {
+    if (!this->replacer_->Evict(&fid)) {
       return nullptr;
     }
 
-    auto p_to_evict = this->pages_ + *fid;
+    auto p_to_evict = this->pages_ + fid;
 
     if (p_to_evict->IsDirty()) {
       // If the replacement frame has a dirty page, you should write it back to the disk first. 
@@ -71,7 +71,7 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
 
   } else {
 
-    *fid = free_list_.front();
+    fid = free_list_.front();
     free_list_.pop_front();
   }
 
@@ -79,11 +79,11 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
   // Remember to "Pin" the frame by calling replacer.SetEvictable(frame_id, false)
   // Also, remember to record the access history of the frame in the replacer for the lru-k algorithm to work.
   auto pid = this->AllocatePage();
-  auto p = this->pages_ + *fid;
+  auto p = this->pages_ + fid;
   p->page_id_ = pid;
-  this->replacer_->RecordAccess(*fid);
-  this->replacer_->SetEvictable(*fid, false);
-  this->page_table_[pid] = *fid;
+  this->replacer_->RecordAccess(fid);
+  this->replacer_->SetEvictable(fid, false);
+  this->page_table_[pid] = fid;
   ++p->pin_count_;
 
   return p;
@@ -105,16 +105,16 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType
 
   // 2.     If not found, pick a replacement frame from either the free list or the replacer 
   //        (always find from the free list first)().
-  frame_id_t *fid;
+  frame_id_t fid;
 
   if (this->free_list_.empty()) {
     // 2.     Return nullptr if page_id needs to be fetched from the disk 
     //        but all frames are currently in use and not evictable (in another word, pinned).
-    if (!this->replacer_->Evict(fid)) {
+    if (!this->replacer_->Evict(&fid)) {
       return nullptr;
     }
 
-    auto p_to_evict = this->pages_ + *fid;
+    auto p_to_evict = this->pages_ + fid;
 
     if (p_to_evict->IsDirty()) {
       // Similar to NewPage(), if the old page is dirty, you need to write it 
@@ -136,13 +136,13 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType
     page_table_.erase(p_to_evict->GetPageId());
 
   } else {
-    *fid = this->free_list_.front();
+    fid = this->free_list_.front();
     this->free_list_.pop_front();
   }
   
   // remember to disable eviction and record the access history 
   // of the frame like you did for NewPage().
-  auto p = this->pages_ + *fid;
+  auto p = this->pages_ + fid;
 
   auto promise = this->disk_scheduler_->CreatePromise();
   auto future = promise.get_future();
@@ -157,9 +157,9 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, [[maybe_unused]] AccessType
   });
   assert(future.get());
 
-  this->replacer_->RecordAccess(*fid);
-  this->replacer_->SetEvictable(*fid, false);
-  this->page_table_[page_id] = *fid;  
+  this->replacer_->RecordAccess(fid);
+  this->replacer_->SetEvictable(fid, false);
+  this->page_table_[page_id] = fid;  
   ++p->pin_count_;
 
   return p;
@@ -181,12 +181,12 @@ auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, [[maybe_unus
 
   if (p->GetPinCount() == 1) {
     this->replacer_->SetEvictable(it->second, true);
-    p->is_dirty_ = true;
   }
 
+  p->is_dirty_ = is_dirty;
   --p->pin_count_;
 
-  return false;
+  return true;
 }
 
 auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool { 
