@@ -7,7 +7,11 @@ BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {}
 
 void BasicPageGuard::Drop() {}
 
-auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard & { return *this; }
+auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard & {
+    this->page_ = that.page_;
+    this->is_dirty_ = that.is_dirty_;
+    
+}
 
 BasicPageGuard::~BasicPageGuard(){};  // NOLINT
 
