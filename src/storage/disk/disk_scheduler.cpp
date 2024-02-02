@@ -44,7 +44,6 @@ void DiskScheduler::StartWorkerThread() {
       return;
     }
 
-    
     auto req_opt = this->request_queue_.Get();
     if (req_opt == std::nullopt) {
       return;

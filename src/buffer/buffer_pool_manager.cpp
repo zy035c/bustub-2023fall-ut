@@ -233,7 +233,31 @@ void BufferPoolManager::FlushAllPages() {
   }
 }
 
-auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { return false; }
+auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { 
+  std::unique_lock<std::mutex> lock(this->latch_);
+  auto it = this->page_table_.find(page_id);
+  if (it == page_table_.end()) {
+    return true;
+  }
+  auto fid = it->second;
+  auto p = this->pages_ + fid;
+  if (p->GetPinCount() > 0) {
+    return false;
+  }
+  this->replacer_->Remove(fid);
+  this->free_list_.push_back(fid);
+  this->page_table_.erase(it);
+
+  // reset metadata of the page
+  p->ResetMemory();
+  p->is_dirty_ = false;
+  p->page_id_ = INVALID_PAGE_ID;
+  p->pin_count_ = 0;
+
+  this->DeallocatePage(page_id);
+
+  return false;
+}
 
 auto BufferPoolManager::AllocatePage() -> page_id_t { return next_page_id_++; }
 
