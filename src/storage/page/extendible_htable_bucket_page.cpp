@@ -26,7 +26,7 @@ void ExtendibleHTableBucketPage<K, V, KC>::Init(uint32_t max_size) {
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Lookup(const K &key, V &value, const KC &cmp) const -> bool {
-  for (int i = 0; i < this->size_; ++i) {
+  for (uint32_t i = 0; i < this->size_; ++i) {
     // cause MappingType is Pair<Key, Value>
     if (cmp(this->KeyAt(i), key) == 0) {
       value = this->ValueAt(i);  // should copy, NOT std::move
@@ -65,7 +65,7 @@ auto ExtendibleHTableBucketPage<K, V, KC>::Remove(const K &key, const KC &cmp) -
 template <typename K, typename V, typename KC>
 void ExtendibleHTableBucketPage<K, V, KC>::RemoveAt(uint32_t bucket_idx) {
   --this->size_;
-  for (int i = bucket_idx; i < this->size_; ++i) {
+  for (uint32_t i = bucket_idx; i < this->size_; ++i) {
     this->array_[i] = std::move(this->array_[i+1]);
   }
 }

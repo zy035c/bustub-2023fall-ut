@@ -61,8 +61,8 @@ auto DiskExtendibleHashTable<K, V, KC>::GetValue(const K &key, std::vector<V> *r
 
 template <typename K, typename V, typename KC>
 auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Transaction *transaction) -> bool {
-  auto hash = this->hash_fn_(key);
-  
+  // auto hash = this->hash_fn_(key);
+  return false;
 }
 
 template <typename K, typename V, typename KC>

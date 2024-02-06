@@ -35,9 +35,9 @@ auto ExtendibleHTableDirectoryPage::HashToBucketIndex(uint32_t hash) const -> ui
     return 0;
   }
   uint32_t ones = 1;
-  for (int i = 1; i < this->max_depth_; ++i) {
-    ones << 1;
-    ones += 1;
+  for (uint32_t i = 1; i < this->max_depth_; ++i) {
+    ones = ones << 1;
+    ++ones;
   }
   // one line: hash & ((1 << global_depth_) - 1)
   return hash & ones;
