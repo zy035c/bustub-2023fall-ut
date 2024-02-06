@@ -54,7 +54,7 @@ ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept = default;
 
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & { 
     this->guard_ = std::move(that.guard_);  // go to line 23
-    return *this; 
+    return *this;
 }
 
 void ReadPageGuard::Drop() {
