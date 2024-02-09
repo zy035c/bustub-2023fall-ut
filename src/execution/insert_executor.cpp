@@ -31,6 +31,8 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     auto idxs = catalog->GetTableIndexes(table->name_);
 
     int32_t count = 0;
+    // For the insertion_txn_ and the deletion_txn_ fields, just set it to INVALID_TXN_ID. 
+    // These fields are intended to be used in future semesters where we might switch to an MVCC storage.
     while (1) {
         Tuple tuple_;
         auto ok = this->child_executor_->Next(&tuple_, rid);
@@ -53,10 +55,6 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
                 ),
                 rid__.value(),
                 &Transaction(INVALID_TXN_ID)
-                // For the insertion_txn_ and the deletion_txn_ fields, 
-                // just set it to INVALID_TXN_ID. 
-                // These fields are intended to be used in future 
-                // semesters where we might switch to an MVCC storage.
             );
         }
 
