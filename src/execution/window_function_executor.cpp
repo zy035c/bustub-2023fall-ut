@@ -12,6 +12,7 @@ WindowFunctionExecutor::WindowFunctionExecutor(ExecutorContext *exec_ctx, const 
 
 void WindowFunctionExecutor::Init() { 
     this->child_executor_->Init();
+    const auto &child_schema = this->child_executor_->GetOutputSchema();
 
     /* Iteration to obtain all tuples */
     while (1) {
@@ -79,7 +80,7 @@ void WindowFunctionExecutor::Init() {
         std::sort(
             this->tuples.begin(), 
             this->tuples.end(), 
-            cmp_wrapper(total_orders, this->child_executor_->GetOutputSchema())
+            cmp_wrapper(total_orders, child_schema)
         );
         /* END */
 
@@ -94,7 +95,7 @@ void WindowFunctionExecutor::Init() {
                 agg_iter,
                 this->tuples.end(), 
                 *agg_iter,
-                cmp_wrapper(partition_orders, this->child_executor_->GetOutputSchema())
+                cmp_wrapper(partition_orders, child_schema)
             );
             auto lower_bound_iter = agg_iter;
 
@@ -173,10 +174,7 @@ void WindowFunctionExecutor::Init() {
 
                         } else if (func_column_idx_set.count(idx) == 0) {
                             values.push_back(
-                                this->plan_->columns_[idx]->Evaluate(
-                                    &(*it), 
-                                    this->child_executor_->GetOutputSchema()
-                                )
+                                this->plan_->columns_[idx]->Evaluate(&(*it), child_schema)
                             );
 
                         } else if (result_tuple_it < this->result_tuples.end()) {
@@ -223,10 +221,9 @@ void WindowFunctionExecutor::Init() {
                             values.push_back(ValueFactory::GetIntegerValue(local_rank));
 
                         } else if (func_column_idx_set.count(idx) == 0) {
-                            values.push_back(this->plan_->columns_[idx]->Evaluate(
-                                &(*it), 
-                                this->child_executor_->GetOutputSchema()
-                            ));
+                            values.push_back(
+                                this->plan_->columns_[idx]->Evaluate(&(*it), child_schema)
+                            );
 
                         } else if (result_tuple_it < this->result_tuples.end()) {
                             values.push_back(result_tuple_it->GetValue(
