@@ -10,9 +10,39 @@
 
 namespace bustub {
 
-auto ReconstructTuple(const Schema *schema, const Tuple &base_tuple, const TupleMeta &base_meta,
-                      const std::vector<UndoLog> &undo_logs) -> std::optional<Tuple> {
-  UNIMPLEMENTED("not implemented");
+auto ReconstructTuple(
+  const Schema *schema, const Tuple &base_tuple, const TupleMeta &base_meta,
+  const std::vector<UndoLog> &undo_logs) -> std::optional<Tuple> {
+  
+  std::vector<Value> values{};
+  for (uint32_t idx = 0; idx < schema->GetColumnCount(); idx++) {
+    values.push_back(base_tuple.GetValue(schema, idx));
+  }
+  
+  for (auto &undo_log : undo_logs) {
+    if (undo_log.is_deleted_) {
+      continue;
+    }
+
+    if (undo_log.ts_ == INVALID_TS) {
+      break;
+    }
+
+    std::vector<Column> partial_columns{};
+    for (size_t i = 0; i < undo_log.modified_fields_.size(); i++) {
+      if (!undo_log.modified_fields_[i]) continue;
+      partial_columns.emplace_back(schema->GetColumn(i));
+    }
+    Schema partial_schema(std::move(partial_columns));
+
+    for (size_t i = 0; i < undo_log.modified_fields_.size(); i++) {
+      if (!undo_log.modified_fields_[i]) continue;
+
+      values[i] = undo_log.tuple_.GetValue(&partial_schema, i);
+    }
+  }
+
+  return Tuple(values, schema);
 }
 
 void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const TableInfo *table_info,
