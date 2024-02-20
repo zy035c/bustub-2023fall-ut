@@ -42,7 +42,7 @@ auto ReconstructTuple(
     }
   }
 
-  return Tuple(values, schema);
+  return std::make_optional(Tuple(values, schema));
 }
 
 void TxnMgrDbg(const std::string &info, TransactionManager *txn_mgr, const TableInfo *table_info,

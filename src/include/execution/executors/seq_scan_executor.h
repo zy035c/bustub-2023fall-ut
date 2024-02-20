@@ -51,5 +51,7 @@ class SeqScanExecutor : public AbstractExecutor {
   /** The sequential scan plan node to be executed */
   const SeqScanPlanNode *plan_;
   TableIterator *it;
+
+  inline auto YieldTuple(TupleMeta& TupleMeta_, Tuple& tuple_, Tuple *tuple, RID *rid) -> bool;
 };
 }  // namespace bustub

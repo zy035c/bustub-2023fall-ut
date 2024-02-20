@@ -14,6 +14,8 @@
 
 #include "execution/executor_context.h"
 #include "storage/table/tuple.h"
+#include "concurrency/transaction_manager.h"
+#include "execution_common.h"
 
 namespace bustub {
 class ExecutorContext;
