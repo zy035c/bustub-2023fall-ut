@@ -19,6 +19,7 @@
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/hash_join_plan.h"
 #include "storage/table/tuple.h"
+#include "common/util/hash_util.h"
 
 namespace bustub {
 
@@ -54,6 +55,42 @@ class HashJoinExecutor : public AbstractExecutor {
  private:
   /** The HashJoin plan node to be executed. */
   const HashJoinPlanNode *plan_;
+
+  std::unique_ptr<AbstractExecutor> left_executor_;
+  std::unique_ptr<AbstractExecutor> right_executor_;
+
+  bool left_is_end_{false};
+  bool left_is_match_{false};
+
+  Tuple left_tuple_;
+  std::vector<std::unordered_map<HashJoinKey, std::vector<Tuple>>> hash_table_;
+
+  auto inline HashJoinExecutor::MakeNullRightTuple(Tuple *left_tuple) -> Tuple;
+  auto inline HashJoinExecutor::MakeJoinTuple(Tuple *left_tuple, Tuple *right_tuple) -> Tuple;
+};
+
+/** HashJoinKey represents a key in an hash join operation */
+struct HashJoinKey {
+  Value key_;
+
+  /**
+   * Compares two hash join keys for equality.
+   * @param other the other hash join key to be compared with
+   * @return `true` if both hash join keys have equivalent key_ expressions, `false` otherwise
+   */
+  auto operator==(const HashJoinKey &other) const -> bool { return key_.CompareEquals(other.key_) == CmpBool::CmpTrue; }
 };
 
 }  // namespace bustub
+
+namespace std {
+
+/** Implements std::hash on Value */
+template <>
+struct hash<bustub::HashJoinKey> {
+  auto operator()(const bustub::HashJoinKey &hash_key) const -> std::size_t {
+    return bustub::HashUtil::HashValue(&hash_key.key_);
+  }
+};
+
+}  // namespace std

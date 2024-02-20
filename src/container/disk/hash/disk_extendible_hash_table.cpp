@@ -31,17 +31,19 @@
 namespace bustub {
 
 template <typename K, typename V, typename KC>
-DiskExtendibleHashTable<K, V, KC>::DiskExtendibleHashTable(const std::string &name, BufferPoolManager *bpm,
-                                                           const KC &cmp, const HashFunction<K> &hash_fn,
-                                                           uint32_t header_max_depth, uint32_t directory_max_depth,
-                                                           uint32_t bucket_max_size)
-    : bpm_(bpm),
-      cmp_(cmp),
-      hash_fn_(std::move(hash_fn)),
-      header_max_depth_(header_max_depth),
-      directory_max_depth_(directory_max_depth),
-      bucket_max_size_(bucket_max_size) {
-  throw NotImplementedException("DiskExtendibleHashTable is not implemented");
+DiskExtendibleHashTable<K, V, KC>::DiskExtendibleHashTable(
+  const std::string &name, 
+  BufferPoolManager *bpm,
+  const KC &cmp, const HashFunction<K> &hash_fn,
+  uint32_t header_max_depth, uint32_t directory_max_depth,
+  uint32_t bucket_max_size
+) : bpm_(bpm),
+  cmp_(cmp),
+  hash_fn_(std::move(hash_fn)),
+  header_max_depth_(header_max_depth),
+  directory_max_depth_(directory_max_depth),
+  bucket_max_size_(bucket_max_size) {
+  
 }
 
 /*****************************************************************************
@@ -59,6 +61,7 @@ auto DiskExtendibleHashTable<K, V, KC>::GetValue(const K &key, std::vector<V> *r
 
 template <typename K, typename V, typename KC>
 auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Transaction *transaction) -> bool {
+  // auto hash = this->hash_fn_(key);
   return false;
 }
 

@@ -183,7 +183,7 @@ auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, [[maybe_unus
     this->replacer_->SetEvictable(it->second, true);
   }
 
-  p->is_dirty_ = is_dirty;
+  p->is_dirty_ = true;
   --p->pin_count_;
 
   return true;
@@ -261,12 +261,24 @@ auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
 
 auto BufferPoolManager::AllocatePage() -> page_id_t { return next_page_id_++; }
 
-auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard { return {this, nullptr}; }
+auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard { 
+  auto p = this->FetchPage(page_id);
+  return {this, p}; 
+}
 
-auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard { return {this, nullptr}; }
+auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard {
+  auto p = this->FetchPage(page_id);
+  return {this, p}; 
+}
 
-auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard { return {this, nullptr}; }
+auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard { 
+  auto p = this->FetchPage(page_id);
+  return {this, p}; 
+}
 
-auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { return {this, nullptr}; }
+auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { 
+  auto p = this->NewPage(page_id);
+  return {this, p}; 
+}
 
 }  // namespace bustub
